@@ -21,4 +21,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # 自作のアプリケーション用URL
     path('', include('diary.urls')),
+    path('accounts/', include('allauth.urls')),
 ]
