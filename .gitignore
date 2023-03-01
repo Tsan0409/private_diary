@@ -1,3 +1,4 @@
 .idea
 diary/__pycache__
 *.pyc
+.env

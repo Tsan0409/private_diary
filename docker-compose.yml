@@ -1,6 +1,5 @@
 version: "3.7"
 services:
-
   web:
     build: .
     command: python3 manage.py runserver 0.0.0.0:8000
@@ -11,10 +10,12 @@ services:
     depends_on:
       - db
   db:
+
     image: postgres
     volumes:
       - ./data/dbi5k:/var/lib/postgresql/data
+    env_file: ./.env
     environment:
       - POSTGRES_DB=private_diary
-      - POSTGRES_USER="postgres"
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
