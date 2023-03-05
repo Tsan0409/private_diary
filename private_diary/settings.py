@@ -1,8 +1,8 @@
 from .settings_common import *
+from decouple import config
 
-SECRET_KEY = "django-insecure-sv5u%c7xu%tl_*r+577hsdsdj8w_gvpjt@o4s@)c1g5u4+@p9n"
-
-DEBUG = True
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
@@ -49,4 +49,4 @@ LOGGING = {
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # メディアファイルの配置場所(ディレクトリ)
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_ROOT = '../venv_private_diary/private_diary/static'

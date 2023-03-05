@@ -29,4 +29,4 @@ urlpatterns = [
 
 # 開発サーバーでメディアを配信できる様にする設定
 # https://<ホスト名>/urlpatterns(ex.accounts)/MEDIA_URL('media')/MEDIA_ROOT(写真のパス)
-urlpatterns += static(settings_common.MEDIA_URL, document_root=settings_dev.MEDIA_ROOT)
+# urlpatterns += static(settings_common.MEDIA_URL, document_root=settings_dev.MEDIA_ROOT)

@@ -1,5 +1,6 @@
 import logging
 
+
 from django.urls import reverse_lazy
 from django.shortcuts import render
 from django.views import generic
@@ -9,6 +10,7 @@ from django.shortcuts import get_object_or_404
 
 from .forms import InquiryForm, DiaryCreateForm
 from .models import Diary
+from private_diary.settings_common import BASE_DIR, STATICFILES_DIRS, STATIC_URL
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +69,11 @@ class DiaryCreateView(LoginRequiredMixin, generic.CreateView):
         # user = user_id　をデータベースから代入
         diary.user = self.request.user
         diary.save()
+        
+        print(f'static_url: {STATIC_URL}')
+        print(f'static_dir: {STATICFILES_DIRS}')
+        print(f'base dir: {BASE_DIR}')
+        diary.save(BASE_DIR, STATIC_URL,STATICFILES_DIRS)
         messages.success(self.request, '日記を作成しました')
         return super().form_valid(form)
 
