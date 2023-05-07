@@ -1,0 +1,222 @@
+# デプロイメント
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: tsan0409/private_diary-web1.2
+          command: ["gunicorn", "private_diary.wsgi:application", "--bind", "0.0.0.0:8000"]
+          
+          envFrom:
+            - configMapRef:
+                name: web-env
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: SECRET_KEY
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: DEBUG
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: POSTGRES_PASSWORD
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: static-vol
+              mountPath: /code/static
+            - name: media-vol
+              mountPath: /code/media
+      imagePullSecrets:
+        - name: my-dockerhub-secret
+      volumes:
+        - name: static-vol
+          persistentVolumeClaim:
+            claimName: static-pvc
+        - name: media-vol
+          persistentVolumeClaim:
+            claimName: media-pvc
+---
+# サービス
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  selector:
+    app: web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: LoadBalancer
+---
+# コンフィグマップ
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-env
+data:
+  DJANGO_SETTINGS_MODULE: private_diary.settings
+  SECRET_KEY: SECRET_KEY
+  DEBUG: "True"
+  ALLOWED_HOSTS: "*"
+  DATABASE_URL: postgres://POSTGRES_USER:POSTGRES_PASSWORD@db:5432/private_diary
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: tsan0409/private_diary-nginx
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: static-vol
+              mountPath: /usr/share/nginx/html/static
+            - name: media-vol
+              mountPath: /usr/share/nginx/html/media
+      volumes:
+        - name: static-vol
+          persistentVolumeClaim:
+            claimName: static-pvc
+        - name: media-vol
+          persistentVolumeClaim:
+            claimName: media-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      hostname: db
+      containers:
+        - name: db
+          image: tsan0409/postgres
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: db-env
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  selector:
+    app: db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  clusterIP: None
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-env
+data:
+  POSTGRES_DB: private_diary
+  POSTGRES_USER: POSTGRES_USER
+  POSTGRES_PASSWORD: POSTGRES_PASSWORD
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: static-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

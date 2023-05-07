@@ -2,3 +2,6 @@
 diary/__pycache__
 *.pyc
 .env
+my-secret.yaml
+my-configmap.yaml
+data/dbi5k

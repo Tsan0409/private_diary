@@ -69,11 +69,6 @@ class DiaryCreateView(LoginRequiredMixin, generic.CreateView):
         # user = user_id　をデータベースから代入
         diary.user = self.request.user
         diary.save()
-        
-        print(f'static_url: {STATIC_URL}')
-        print(f'static_dir: {STATICFILES_DIRS}')
-        print(f'base dir: {BASE_DIR}')
-        diary.save(BASE_DIR, STATIC_URL,STATICFILES_DIRS)
         messages.success(self.request, '日記を作成しました')
         return super().form_valid(form)
 
